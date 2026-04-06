@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, Plus, Trash2, CreditCard as Edit, Users, Image, Tag, Package, ShoppingBag, Check, X, Printer, MapPin } from 'lucide-react';
+import { ArrowLeft, LogOut, Plus, Trash2, CreditCard as Edit, Users, Image, Tag, Package, ShoppingBag, Check, X, Printer, MapPin, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +13,12 @@ type Product = {
   price: number;
   stock: number;
   image_url: string;
+  tipo?: string;
+  valor_compra?: number;
+  diamond?: number;
+  lucro?: number;
+  estoque?: number;
+  descricao?: string;
 };
 
 type Banner = {
@@ -235,13 +241,34 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
 
       const products: Product[] = [];
 
+      const parseCSVLine = (line: string): string[] => {
+        const values: string[] = [];
+        let currentValue = '';
+        let insideQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+
+          if (char === '"') {
+            insideQuotes = !insideQuotes;
+          } else if (char === ',' && !insideQuotes) {
+            values.push(currentValue.trim());
+            currentValue = '';
+          } else {
+            currentValue += char;
+          }
+        }
+        values.push(currentValue.trim());
+        return values;
+      };
+
       for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
+        const values = parseCSVLine(lines[i]);
 
         if (values.length < 9) continue;
 
         const parsePrice = (value: string) => {
-          const cleaned = value.replace(/[R$\s.]/g, '').replace(',', '.');
+          const cleaned = value.replace(/[R$\s"]/g, '').replace('.', '').replace(',', '.');
           return parseFloat(cleaned) || 0;
         };
 
@@ -261,6 +288,10 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
         };
 
         products.push(product);
+      }
+
+      if (products.length === 0) {
+        throw new Error('Nenhum produto válido encontrado no CSV');
       }
 
       const { error } = await supabase.from('products').insert(products);
