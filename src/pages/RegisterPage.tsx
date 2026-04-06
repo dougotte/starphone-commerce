@@ -58,6 +58,12 @@ export default function RegisterPage({ onNavigate }: { onNavigate: (page: PageTy
               <p className="text-gray-600">Cadastre-se para começar</p>
             </div>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <span className="font-semibold text-blue-900">Prezado cliente,</span> após o cadastro, precisamos que seus dados sejam preenchidos apenas no primeiro pedido. Nos próximos pedidos, seus dados já estarão salvos para facilitar suas futuras compras.
+              </p>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">

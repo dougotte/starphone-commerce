@@ -111,15 +111,6 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: PageType)
                 </button>
               </p>
             </div>
-
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => onNavigate('admin-login')}
-                className="text-gray-500 text-sm hover:text-gray-700"
-              >
-                Acesso administrativo
-              </button>
-            </div>
           </div>
         </div>
       </div>

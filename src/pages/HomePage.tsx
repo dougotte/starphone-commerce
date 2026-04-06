@@ -320,10 +320,13 @@ export default function HomePage({
           </aside>
 
           <section className="lg:col-span-6">
-            <div className="mb-6 lg:hidden">
+            <div className="mb-6 lg:hidden space-y-3">
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => setSelectedBrand(null)}
+                  onClick={() => {
+                    setSelectedBrand(null);
+                    setSelectedTipo(null);
+                  }}
                   className={`flex-1 min-w-[30%] px-3 py-2 rounded-lg font-semibold transition text-sm ${
                     selectedBrand === null
                       ? 'bg-[#00ff00] text-black'
@@ -336,7 +339,10 @@ export default function HomePage({
                 {brands.map((brand) => (
                   <button
                     key={brand.name}
-                    onClick={() => setSelectedBrand(brand.name)}
+                    onClick={() => {
+                      setSelectedBrand(brand.name);
+                      setSelectedTipo(null);
+                    }}
                     className={`flex-1 min-w-[30%] px-3 py-2 rounded-lg font-semibold transition text-sm ${
                       selectedBrand === brand.name
                         ? 'ring-2 ring-[#00ff00]'
@@ -352,6 +358,47 @@ export default function HomePage({
                   </button>
                 ))}
               </div>
+
+              {selectedBrand && (
+                <div className="bg-white rounded-lg p-3 shadow-md">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">Filtrar por tipo:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedTipo(null)}
+                      className={`px-3 py-1.5 rounded-lg font-medium transition text-xs ${
+                        selectedTipo === null
+                          ? 'ring-2 ring-[#00ff00] text-white'
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      }`}
+                      style={{
+                        backgroundColor: selectedTipo === null
+                          ? brands.find(b => b.name === selectedBrand)?.color || '#000'
+                          : undefined
+                      }}
+                    >
+                      Todos
+                    </button>
+                    {['TELA', 'BATERIA', 'DOCK DE CARGA', 'TAMPA TRASEIRA', 'PERIFÉRICOS'].map((tipo) => (
+                      <button
+                        key={tipo}
+                        onClick={() => setSelectedTipo(tipo)}
+                        className={`px-3 py-1.5 rounded-lg font-medium transition text-xs ${
+                          selectedTipo === tipo
+                            ? 'ring-2 ring-[#00ff00] text-white'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                        style={{
+                          backgroundColor: selectedTipo === tipo
+                            ? brands.find(b => b.name === selectedBrand)?.color || '#000'
+                            : undefined
+                        }}
+                      >
+                        {tipo}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-4">
