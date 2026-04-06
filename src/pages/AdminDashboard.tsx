@@ -80,6 +80,12 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
     price: 0,
     stock: 0,
     image_url: '',
+    tipo: '',
+    valor_compra: 0,
+    diamond: 0,
+    lucro: 0,
+    estoque: 0,
+    descricao: '',
   });
 
   const [bannerForm, setBannerForm] = useState<Banner>({
@@ -194,11 +200,77 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
         setMessage('Produto cadastrado!');
       }
 
-      setProductForm({ name: '', description: '', brand: '', price: 0, stock: 0, image_url: '' });
+      setProductForm({
+        name: '',
+        description: '',
+        brand: '',
+        price: 0,
+        stock: 0,
+        image_url: '',
+        tipo: '',
+        valor_compra: 0,
+        diamond: 0,
+        lucro: 0,
+        estoque: 0,
+        descricao: '',
+      });
       setEditingProduct(null);
       loadProducts();
     } catch (error) {
       setMessage('Erro ao salvar produto: ' + (error as any).message);
+      console.error(error);
+    }
+  };
+
+  const handleCSVImport = async (file: File) => {
+    setMessage('Importando produtos...');
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+
+      if (lines.length < 2) {
+        throw new Error('CSV vazio ou inválido');
+      }
+
+      const products: Product[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+
+        if (values.length < 9) continue;
+
+        const parsePrice = (value: string) => {
+          const cleaned = value.replace(/[R$\s.]/g, '').replace(',', '.');
+          return parseFloat(cleaned) || 0;
+        };
+
+        const product: Product = {
+          brand: values[0] || '',
+          tipo: values[1] || '',
+          name: values[2] || '',
+          price: parsePrice(values[3]),
+          valor_compra: parsePrice(values[4]),
+          diamond: parsePrice(values[5]),
+          lucro: parseInt(values[6]) || 0,
+          estoque: parseInt(values[7]) || 0,
+          descricao: values[8] || '',
+          description: values[8] || '',
+          stock: parseInt(values[7]) || 0,
+          image_url: '',
+        };
+
+        products.push(product);
+      }
+
+      const { error } = await supabase.from('products').insert(products);
+
+      if (error) throw error;
+
+      setMessage(`${products.length} produtos importados com sucesso!`);
+      await loadProducts();
+    } catch (error) {
+      setMessage('Erro ao importar CSV: ' + (error as any).message);
       console.error(error);
     }
   };
@@ -675,6 +747,25 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
 
             {activeTab === 'products' && (
               <div>
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <Upload size={20} className="text-blue-600" />
+                    Importação em Massa (CSV)
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Formato: MARCA, TIPO, PRODUTO, VALOR, VALOR DE COMPRA, DIAMOND, LUCRO, ESTOQUE, DESCRIÇÃO
+                  </p>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleCSVImport(file);
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00ff00] focus:outline-none bg-white"
+                  />
+                </div>
+
                 <h2 className="text-2xl font-bold mb-6">
                   {editingProduct ? 'Editar Produto' : 'Cadastrar Produto'}
                 </h2>
@@ -713,6 +804,23 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tipo
+                      </label>
+                      <select
+                        value={productForm.tipo || ''}
+                        onChange={(e) => setProductForm({ ...productForm, tipo: e.target.value })}
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#00ff00] focus:outline-none"
+                      >
+                        <option value="">Selecione um tipo</option>
+                        <option value="TELA">TELA</option>
+                        <option value="BATERIA">BATERIA</option>
+                        <option value="DOCK DE CARGA">DOCK DE CARGA</option>
+                        <option value="TAMPA TRASEIRA">TAMPA TRASEIRA</option>
+                        <option value="PERIFÉRICOS">PERIFÉRICOS</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Preço (R$)
                       </label>
                       <input
@@ -738,6 +846,48 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
                         className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#00ff00] focus:outline-none"
                         required
                         min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Valor de Compra (R$)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={productForm.valor_compra || ''}
+                        onChange={(e) => setProductForm({ ...productForm, valor_compra: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#00ff00] focus:outline-none"
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Diamond (R$)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={productForm.diamond || ''}
+                        onChange={(e) => setProductForm({ ...productForm, diamond: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#00ff00] focus:outline-none"
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Lucro (%)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={productForm.lucro || ''}
+                        onChange={(e) => setProductForm({ ...productForm, lucro: parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#00ff00] focus:outline-none"
+                        min="0"
+                        max="100"
                       />
                     </div>
                   </div>
@@ -777,7 +927,20 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
                         type="button"
                         onClick={() => {
                           setEditingProduct(null);
-                          setProductForm({ name: '', description: '', brand: '', price: 0, stock: 0, image_url: '' });
+                          setProductForm({
+                            name: '',
+                            description: '',
+                            brand: '',
+                            price: 0,
+                            stock: 0,
+                            image_url: '',
+                            tipo: '',
+                            valor_compra: 0,
+                            diamond: 0,
+                            lucro: 0,
+                            estoque: 0,
+                            descricao: '',
+                          });
                         }}
                         className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition"
                       >

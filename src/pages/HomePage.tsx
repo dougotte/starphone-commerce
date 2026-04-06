@@ -309,6 +309,8 @@ export default function HomePage({
               brands={brands}
               selectedBrand={selectedBrand}
               onSelectBrand={setSelectedBrand}
+              selectedTipo={selectedTipo}
+              onSelectTipo={setSelectedTipo}
             />
           </aside>
 
