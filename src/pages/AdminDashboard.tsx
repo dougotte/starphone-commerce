@@ -239,6 +239,16 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
         throw new Error('CSV vazio ou inválido');
       }
 
+      const { data: categoriesData } = await supabase
+        .from('product_categories')
+        .select('name')
+        .eq('is_active', true);
+
+      const categoryMap = new Map<string, string>();
+      categoriesData?.forEach(cat => {
+        categoryMap.set(cat.name.toUpperCase(), cat.name);
+      });
+
       const products: Product[] = [];
 
       const parseCSVLine = (line: string): string[] => {
@@ -262,6 +272,11 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
         return values;
       };
 
+      const normalizeBrand = (brand: string): string => {
+        const upperBrand = brand.toUpperCase();
+        return categoryMap.get(upperBrand) || brand;
+      };
+
       for (let i = 1; i < lines.length; i++) {
         const values = parseCSVLine(lines[i]);
 
@@ -273,7 +288,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
         };
 
         const product: Product = {
-          brand: values[0] || '',
+          brand: normalizeBrand(values[0] || ''),
           tipo: values[1] || '',
           name: values[2] || '',
           price: parsePrice(values[3]),
