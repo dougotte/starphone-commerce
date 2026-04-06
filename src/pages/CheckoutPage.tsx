@@ -211,7 +211,12 @@ export default function CheckoutPage({
       setShowSuccessScreen(true);
 
       setTimeout(() => {
-        window.open(`https://wa.me/5519995627428?text=${whatsappMessage}`, '_blank');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          window.location.href = `https://api.whatsapp.com/send?phone=5519995627428&text=${whatsappMessage}`;
+        } else {
+          window.open(`https://wa.me/5519995627428?text=${whatsappMessage}`, '_blank');
+        }
       }, 500);
     } catch (error) {
       setMessage('Erro ao confirmar pagamento');
@@ -332,7 +337,13 @@ export default function CheckoutPage({
           `Forma de Pagamento: Dinheiro 💵\n` +
           `Status: Aguardando Pagamento`
         );
-        window.open(`https://wa.me/5519995627428?text=${whatsappMessage}`, '_blank');
+
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          window.location.href = `https://api.whatsapp.com/send?phone=5519995627428&text=${whatsappMessage}`;
+        } else {
+          window.open(`https://wa.me/5519995627428?text=${whatsappMessage}`, '_blank');
+        }
 
         setCompletedOrderData({
           ...orderImageData,
@@ -412,6 +423,9 @@ export default function CheckoutPage({
                 <p className="text-sm text-blue-800">
                   <strong>Atenção:</strong> Seu pedido foi enviado para nosso WhatsApp.
                   Aguarde a confirmação da equipe.
+                </p>
+                <p className="text-sm text-blue-800 mt-2">
+                  <strong>Não esqueça de enviar seu comprovante de pagamento junto ao pedido em nosso WhatsApp!</strong>
                 </p>
               </div>
             </div>
