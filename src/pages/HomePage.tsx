@@ -44,6 +44,7 @@ export default function HomePage({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedTipo, setSelectedTipo] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -64,7 +65,7 @@ export default function HomePage({
 
   useEffect(() => {
     filterProducts();
-  }, [selectedBrand, searchQuery, products]);
+  }, [selectedBrand, selectedTipo, searchQuery, products]);
 
   const loadBrands = async () => {
     const { data, error } = await supabase
@@ -122,12 +123,16 @@ export default function HomePage({
       filtered = filtered.filter(p => p.brand === selectedBrand);
     }
 
+    if (selectedTipo) {
+      filtered = filtered.filter(p => p.tipo === selectedTipo);
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(query) ||
         p.brand.toLowerCase().includes(query) ||
-        p.model.toLowerCase().includes(query)
+        (p.model && p.model.toLowerCase().includes(query))
       );
     }
 
