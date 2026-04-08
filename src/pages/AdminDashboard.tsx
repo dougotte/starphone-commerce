@@ -119,6 +119,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadAllData();
@@ -330,6 +331,41 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
     }
   };
 
+  const handleToggleSelectProduct = (id: string) => {
+    setSelectedProducts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllProducts = () => {
+    if (selectedProducts.size === products.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(products.map(p => p.id!)));
+    }
+  };
+
+  const handleDeleteSelectedProducts = async () => {
+    if (selectedProducts.size === 0) return;
+    if (!confirm(`Tem certeza que deseja excluir ${selectedProducts.size} produto(s) selecionado(s)?`)) return;
+
+    const ids = Array.from(selectedProducts);
+    const { error } = await supabase.from('products').delete().in('id', ids);
+    if (!error) {
+      setMessage(`${ids.length} produto(s) excluído(s)!`);
+      setSelectedProducts(new Set());
+      loadProducts();
+    } else {
+      setMessage('Erro ao excluir produtos: ' + error.message);
+    }
+  };
+
   const handleEditProduct = (product: Product) => {
     setProductForm(product);
     setEditingProduct(product.id!);
@@ -456,7 +492,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
 
     const items = order.items || [];
     const itemsHTML = items.map((item: any) =>
-      `<div class="value">• ${item.name || 'Produto'} (Qtd: ${item.quantity || 0})</div>`
+      `<div class="row">- ${item.name || 'Produto'} (Qtd: ${item.quantity || 0})</div>`
     ).join('');
 
     const street = order.street || order.shipping_address?.street || 'N/A';
@@ -479,115 +515,142 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
   <meta charset="UTF-8">
   <title>Etiqueta de Envio - Pedido #${order.id.substring(0, 8)}</title>
   <style>
+    * { box-sizing: border-box; }
     @media print {
       @page {
         size: 10cm 15cm;
         margin: 0;
       }
-      body {
-        margin: 0.5cm;
+      html, body {
+        width: 10cm;
+        height: 15cm;
+        margin: 0;
+        padding: 0;
       }
       .no-print {
-        display: none;
+        display: none !important;
+      }
+      .label-wrap {
+        width: 10cm;
+        height: 15cm;
+        padding: 0.4cm;
+        overflow: hidden;
       }
     }
     body {
       font-family: Arial, sans-serif;
-      font-size: 12px;
-      padding: 10px;
+      font-size: 9pt;
       margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #000;
+    }
+    .label-wrap {
+      width: 10cm;
+      padding: 0.4cm;
     }
     .header {
       text-align: center;
       border-bottom: 2px solid #000;
-      padding-bottom: 10px;
-      margin-bottom: 10px;
+      padding-bottom: 5px;
+      margin-bottom: 6px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 11pt;
+      letter-spacing: 1px;
+    }
+    .header p {
+      margin: 2px 0 0;
+      font-size: 8pt;
     }
     .section {
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
-    .label {
+    .section-label {
       font-weight: bold;
-      font-size: 10px;
-      color: #666;
+      font-size: 7pt;
+      text-transform: uppercase;
+      color: #444;
+      border-bottom: 1px solid #ccc;
       margin-bottom: 3px;
+      padding-bottom: 1px;
     }
-    .value {
-      font-size: 13px;
-      margin-bottom: 5px;
+    .row {
+      font-size: 8.5pt;
+      margin-bottom: 2px;
+      line-height: 1.3;
     }
     .address-box {
-      border: 2px solid #000;
-      padding: 10px;
-      margin-top: 10px;
-      margin-bottom: 10px;
+      border: 1.5px solid #000;
+      padding: 5px 7px;
+      margin-bottom: 6px;
+      border-radius: 2px;
     }
-    .print-button {
+    .address-box .section-label {
+      border-bottom: 1px solid #000;
+    }
+    .totals {
+      border-top: 2px solid #000;
+      padding-top: 5px;
+      margin-top: 4px;
+    }
+    .no-print {
       text-align: center;
-      margin: 20px 0;
+      margin: 16px 0;
     }
-    button {
+    .no-print button {
       background: #2563eb;
       color: white;
-      padding: 10px 20px;
+      padding: 8px 18px;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
-      font-size: 14px;
-    }
-    button:hover {
-      background: #1d4ed8;
+      font-size: 13px;
     }
   </style>
 </head>
 <body>
-  <div class="no-print print-button">
-    <button onclick="window.print()">🖨️ Imprimir Etiqueta</button>
+  <div class="no-print">
+    <button onclick="window.print()">Imprimir Etiqueta</button>
   </div>
 
-  <div class="header">
-    <h2 style="margin: 0; font-size: 18px;">ETIQUETA DE ENVIO</h2>
-    <p style="margin: 5px 0; font-size: 14px;"><strong>Pedido #${order.id.substring(0, 8)}</strong></p>
-    <p style="margin: 5px 0; font-size: 11px;">${new Date(order.created_at).toLocaleString('pt-BR')}</p>
-  </div>
-
-  <div class="section">
-    <div class="label">DESTINATÁRIO</div>
-    <div class="value"><strong>${order.customer_name || 'N/A'}</strong></div>
-    <div class="value">📞 ${order.customer_phone || 'N/A'}</div>
-    <div class="value">📧 ${order.customer_email || 'N/A'}</div>
-  </div>
-
-  <div class="address-box">
-    <div class="label">📍 ENDEREÇO DE ENTREGA COMPLETO</div>
-    <div class="value">
-      <strong>${street}, ${number}</strong>
+  <div class="label-wrap">
+    <div class="header">
+      <h2>ETIQUETA DE ENVIO</h2>
+      <p><strong>Pedido #${order.id.substring(0, 8)}</strong> &nbsp;|&nbsp; ${new Date(order.created_at).toLocaleString('pt-BR')}</p>
     </div>
-    ${complement ? `<div class="value">Complemento: ${complement}</div>` : ''}
-    <div class="value">
-      Bairro: <strong>${neighborhood}</strong>
+
+    <div class="section">
+      <div class="section-label">Destinatario</div>
+      <div class="row"><strong>${order.customer_name || 'N/A'}</strong></div>
+      <div class="row">Tel: ${order.customer_phone || 'N/A'}</div>
+      <div class="row">Email: ${order.customer_email || 'N/A'}</div>
     </div>
-    <div class="value">
-      Cidade: <strong>${city} - ${state}</strong>
+
+    <div class="address-box">
+      <div class="section-label">Endereco de Entrega</div>
+      <div class="row"><strong>${street}, ${number}</strong></div>
+      ${complement ? `<div class="row">Compl: ${complement}</div>` : ''}
+      <div class="row">Bairro: ${neighborhood}</div>
+      <div class="row">Cidade: ${city} - ${state}</div>
+      <div class="row">CEP: <strong>${cep}</strong></div>
     </div>
-    <div class="value">
-      CEP: <strong>${cep}</strong>
+
+    <div class="section">
+      <div class="section-label">Produtos</div>
+      ${itemsHTML || '<div class="row">Nenhum produto</div>'}
+    </div>
+
+    <div class="totals">
+      <div class="row"><strong>Total: R$ ${order.total_amount.toFixed(2)}</strong></div>
+      <div class="row">Pagamento: ${order.payment_method === 'pix' ? 'PIX' : 'Dinheiro'}</div>
+      <div class="row">Status: ${order.payment_status === 'paid' ? 'Pago' : 'Pendente'}</div>
     </div>
   </div>
 
-  <div class="section">
-    <div class="label">📦 PRODUTOS DO PEDIDO</div>
-    ${itemsHTML || '<div class="value">Nenhum produto</div>'}
-  </div>
-
-  <div class="section" style="border-top: 2px solid #000; padding-top: 10px; margin-top: 15px;">
-    <div class="value"><strong>💰 Total: R$ ${order.total_amount.toFixed(2)}</strong></div>
-    <div class="value">💳 ${order.payment_method === 'pix' ? 'Pagamento: PIX' : 'Pagamento: Dinheiro'}</div>
-    <div class="value">Status: ${order.payment_status === 'paid' ? '✅ Pago' : '⏳ Pendente'}</div>
-  </div>
-
-  <div class="no-print print-button">
-    <button onclick="window.print()">🖨️ Imprimir Etiqueta</button>
+  <div class="no-print">
+    <button onclick="window.print()">Imprimir Etiqueta</button>
   </div>
 </body>
 </html>`;
@@ -996,15 +1059,46 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: Page
                   </div>
                 </form>
 
-                <h3 className="text-xl font-bold mb-4">Produtos Cadastrados</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold">Produtos Cadastrados ({products.length})</h3>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={products.length > 0 && selectedProducts.size === products.length}
+                        onChange={handleSelectAllProducts}
+                        className="w-4 h-4 accent-[#00ff00]"
+                      />
+                      Marcar todos
+                    </label>
+                    {selectedProducts.size > 0 && (
+                      <button
+                        onClick={handleDeleteSelectedProducts}
+                        className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition"
+                      >
+                        <Trash2 size={16} />
+                        Excluir selecionados ({selectedProducts.size})
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {products.map((product) => (
-                    <div key={product.id} className="flex justify-between items-center border p-4 rounded-lg hover:bg-gray-50">
-                      <div className="flex-1">
-                        <h4 className="font-bold">{product.name}</h4>
+                    <div
+                      key={product.id}
+                      className={`flex items-center gap-3 border p-4 rounded-lg hover:bg-gray-50 transition ${selectedProducts.has(product.id!) ? 'border-red-400 bg-red-50' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedProducts.has(product.id!)}
+                        onChange={() => handleToggleSelectProduct(product.id!)}
+                        className="w-4 h-4 shrink-0 accent-[#00ff00]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold truncate">{product.name}</h4>
                         <p className="text-sm text-gray-600">{product.brand} - R$ {product.price.toFixed(2)} - Estoque: {product.stock}</p>
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 shrink-0">
                         <button
                           onClick={() => handleEditProduct(product)}
                           className="text-blue-600 hover:text-blue-800 transition"

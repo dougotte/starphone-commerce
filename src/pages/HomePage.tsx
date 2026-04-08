@@ -437,13 +437,13 @@ export default function HomePage({
           onClick={() => setMobileCartOpen(true)}
           className="w-full bg-[#00ff00] text-black py-4 rounded-lg font-bold flex items-center justify-center gap-2 relative"
         >
-          <CartIcon size={24} />
-          <span>Ver Carrinho</span>
           {totalItems > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            <span className="absolute -top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
               {totalItems}
             </span>
           )}
+          <CartIcon size={24} />
+          <span>Ver Carrinho</span>
         </button>
       </div>
 
